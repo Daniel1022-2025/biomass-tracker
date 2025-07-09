@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Biomass Data</title>
+  <style>
+    body {
+      background: #f1f8e9;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 40px;
+      color: #33691e;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form.inline {
+      display: inline;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 6px 12px;
+      margin-right: 4px;
+      background-color: #558b2f;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #33691e;
+    }
+    .delete-btn {
+      background-color: #c62828;
+    }
+    .delete-btn:hover {
+      background-color: #b71c1c;
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .controls input, .controls select {
+      padding: 6px;
+      margin: 0 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .back-link a {
+      color: #33691e;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 0 10px;
+    }
+  </style>
+  <script>
+    function confirmDelete(form) {
+      if (confirm("Are you sure you want to delete this record?")) {
+        form.action.value = 'delete';
+        form.submit();
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>✏️ Edit Biomass Records</h1>
+
+  <div class="controls">
+    <form method="GET" style="display:inline;">
+      <label>Search:</label>
+      <input type="text" name="search" value="{{ search }}">
+      <label>Rows per page:</label>
+      <select name="per_page" onchange="this.form.submit()">
+        {% for option in [5, 10, 20, 50] %}
+          <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="page" value="1">
+      <button type="submit">Apply</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        {% for header in headers %}
+          <th>{{ header }}</th>
+        {% endfor %}
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data %}
+        <tr>
+          <form method="POST">
+            {% for i in range(headers|length) %}
+              <td><input type="text" name="{{ headers[i] }}" value="{{ row[i] }}"></td>
+            {% endfor %}
+            <td>
+              <input type="hidden" name="index" value="{{ start_index + loop.index0 }}">
+              <input type="hidden" name="action" value="save">
+              <button type="submit">Save</button>
+              <button type="button" class="delete-btn" onclick="confirmDelete(this.form)">Delete</button>
+            </td>
+          </form>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="back-link">
+    <a href="/">← Back to Dashboard</a>
+    <a href="/undo">↩️ Undo Last Change</a>
+  </div>
+
+  <div class="back-link" style="margin-top: 20px;">
+    {% if page > 1 %}
+      <a href="{{ url_for('edit', page=page-1, per_page=per_page, search=search) }}">⬅️ Previous</a>
+    {% endif %}
+    Page {{ page }} of {{ total_pages }}
+    {% if page < total_pages %}
+      <a href="{{ url_for('edit', page=page+1, per_page=per_page, search=search) }}">Next ➡️</a>
+    {% endif %}
+  </div>
+</body>
+</html>

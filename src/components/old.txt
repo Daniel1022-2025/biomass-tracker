@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biomass Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+  font-family: 'Segoe UI', sans-serif;
+  padding: 30px;
+  color: #fff;
+  background-color:  #1e2a38; /* Slate Blue */
+
+  background-size: cover;
+  background-position: center;
+  transition: background-image 0.5s ease-in-out;
+}
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .pin-indicator {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+      background-color: #4caf50;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    form {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header-background {
+  background-image: url('/static/images/sunny-cows.jpg'); /* fallback image */
+  background-size: cover;
+  background-position: center;
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  transition: background-image 0.5s ease-in-out;
+}
+    input, select {
+      padding: 6px;
+      margin: 0 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 6px 12px;
+      background-color: #33691e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .metrics {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .metrics p {
+      font-size: 16px;
+      margin: 4px 0;
+    }
+    .chart-container {
+      width: 80%;
+      max-width: 600px;
+      margin: 0 auto 30px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 12px;
+    }
+    .nav {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .nav a {
+      margin: 0 10px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 6px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .toggles {
+      text-align: center;
+      margin-bottom: 20px;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 10px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .toggles label {
+      margin: 0 15px;
+      font-weight: bold;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gauge-wrapper {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 0 auto 30px;
+}
+
+#gaugeLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content
+ <div class="gauge-wrapper">
+  <canvas id="gaugeCanvas" width="300" height="300"></canvas>
+  <div id="gaugeLabel">
+    <span class="gauge-value">{{ "%.3f"|format(biomass_value) }}</span>
+    <span class="gauge-unit">g/m²</span>
+  </div>
+</div>
+
+#gaugeLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.gauge-value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.gauge-unit {
+  font-size: 14px;
+}
+  </style>
+</head>
+<body>
+  <div class="header-background">
+    <h1>🌿 Biomass Dashboard</h1>
+    <div id="pin" class="pin-indicator">{{ "%.3f"|format(biomass_value) }} g/m²</div>
+
+<div class="metrics">
+  <p><strong>Average Biomass (Selected Period):</strong> {{ "%.3f"|format(biomass_avg) }} g/m²</p>
+  <!-- Remove this line if you're not calculating a true 7-day average -->
+  <!-- <p><strong>7-Day Average:</strong> {{ "%.3f"|format(biomass_avg) }} g/m²</p> -->
+</div>
+
+    <form method="GET" id="filterForm">
+  <label>From:</label>
+  <input type="date" name="start" id="startDate" value="{{ start_date }}">
+
+  <label>To:</label>
+  <input type="date" name="end" id="endDate" value="{{ end_date }}">
+
+  <!-- ⬅️ Previous and ➡️ Next Buttons -->
+  <button type="button" id="prevDayBtn" style="margin-left: 8px;">⬅️ Previous</button>
+  <button type="button" id="nextDayBtn" style="margin-left: 4px;">➡️ Next</button>
+
+  <label>Location:</label>
+  <select name="location">
+    <option value="">All</option>
+    {% for loc in locations %}
+      <option value="{{ loc }}" {% if loc == selected_location %}selected{% endif %}>{{ loc }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Filter</button>
+</form>
+
+
+    <div class="metrics">
+      <p><strong>Average Biomass (Selected Period):</strong> {{ biomass_avg }} g/m²</p>
+      <p><strong>7-Day Average:</strong> {{ biomass_avg }} g/m²</p>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="toggleGauge" checked> <span id="labelGauge">Gauge</span></label>
+      <label><input type="checkbox" id="toggleBiomass" checked> <span id="labelBiomass">Biomass</span></label>
+      <label><input type="checkbox" id="toggleRainfall" checked> <span id="labelRainfall">Rainfall</span></label>
+      <label><input type="checkbox" id="toggleCompare" checked> <span id="labelCompare">Compare</span></label>
+    </div>
+  </div>
+<div class="gauge-wrapper">
+  <canvas id="gaugeCanvas" width="300" height="300"></canvas>
+  <div id="gaugeLabel">
+    <span class="gauge-value">{{ "%.3f"|format(biomass_value) }}</span>
+    <span class="gauge-unit">g/m²</span>
+  </div>
+</div>
+
+
+  <div class="chart-container" id="biomassContainer">
+    <canvas id="biomassChart" width="400" height="200"></canvas>
+  </div>
+  <div class="chart-container" id="rainfallContainer">
+    <canvas id="rainfallChart" width="400" height="200"></canvas>
+  </div>
+  <div class="chart-container" id="compareContainer">
+    <canvas id="locationCompareChart" width="400" height="200"></canvas>
+  </div>
+
+  <div class="nav">
+    <a href="/admin">➕ Add</a>
+    <a href="/edit">✏️ Edit</a>
+    <a href="/download">⬇️ All</a>
+    <a href="/export?start={{ start_date }}&end={{ end_date }}&location={{ selected_location }}">📤 Export</a>
+    <a href="/forecast">📈 Forecast</a>
+  </div>
+
+  <script>
+    const gaugeColor = "{{ gauge_color }}";
+    const latestRainfall = {{ rainfall[-1] if rainfall else 0 }};
+    const pin = document.getElementById("pin");
+    if (pin) pin.style.backgroundColor = gaugeColor;
+
+    // 🌤️ Dynamic background
+    let bgImage = "";
+    if (gaugeColor === "#4caf50") {
+      bgImage = latestRainfall > 20
+        ? "/static/images/rainy-cows.jpg"
+        : "/static/images/sunny-cows.jpg";
+    } else if (gaugeColor === "#ff9800") {
+      bgImage = "/static/images/rainy-grazing.jpg";
+    } else {
+      bgImage = "/static/images/drought-thin-cattle.jpg";
+    }
+    const header = document.querySelector(".header-background");
+if (header) {
+  header.style.backgroundImage = `url('${bgImage}')`;
+}
+
+    // 🧩 Center text plugin
+    Chart.register({
+      id: 'centerText',
+      beforeDraw(chart) {
+        if (chart.config.type !== 'doughnut') return;
+        const { ctx } = chart;
+        const value = {{ biomass_value }};
+        const { top, bottom, left, right } = chart.chartArea;
+        const centerX = (left + right) / 2;
+        const centerY = (top + bottom) / 2;
+        ctx.save();
+        ctx.font = 'bold 18px Segoe UI';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(value + ' g/m²', centerX, centerY);
+        ctx.restore();
+      }
+    });
+
+    // 🌡️ Gauge chart
+   
+
+ // Biomass line chart
+const biomassCtx = document.getElementById('biomassChart').getContext('2d');
+new Chart(biomassCtx, {
+  type: 'line',
+  data: {
+    labels: {{ dates|tojson }},
+    datasets: [{
+      label: 'Biomass (g/m²)',
+      data: {{ biomass|tojson }},
+      borderColor: gaugeColor,
+      fill: false,
+      tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: true } }
+  }
+});
+
+// Rainfall bar chart
+const rainfallCtx = document.getElementById('rainfallChart').getContext('2d');
+new Chart(rainfallCtx, {
+  type: 'bar',
+  data: {
+    labels: {{ dates|tojson }},
+    datasets: [{
+      label: 'Rainfall (mm)',
+      data: {{ rainfall|tojson }},
+      backgroundColor: '#64b5f6'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: true } }
+  }
+});
+
+// Location comparison chart
+const compareCtx = document.getElementById('locationCompareChart').getContext('2d');
+const locationSeries = {{ location_series|tojson }};
+const datasets = Object.entries(locationSeries).map(([loc, data], i) => ({
+  label: loc,
+  data: data.biomass,
+  borderColor: `hsl(${i * 60}, 70%, 50%)`,
+  fill: false,
+  tension: 0.3
+}));
+
+new Chart(compareCtx, {
+  type: 'line',
+  data: {
+    labels: locationSeries[Object.keys(locationSeries)[0]].dates,
+    datasets: datasets
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: true } }
+  }
+});
+
+
+
+    // 🧭 Toggle logic with label updates
+    function toggleChart(id, labelId, name) {
+      const checkbox = document.getElementById(id);
+      const container = document.getElementById(id.replace("toggle", "").toLowerCase() + "Container");
+      const label = document.getElementById(labelId);
+
+      checkbox.addEventListener("change", () => {
+        const visible = checkbox.checked;
+        container.style.display = visible ? "block" : "none";
+        label.textContent = visible ? name : `${name} (hidden)`;
+      });
+    }
+
+    toggleChart("toggleGauge", "labelGauge", "Gauge");
+    toggleChart("toggleBiomass", "labelBiomass", "Biomass");
+    toggleChart("toggleRainfall", "labelRainfall", "Rainfall");
+    toggleChart("toggleCompare", "labelCompare", "Compare");
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gaugeJS@1.3.9/dist/gauge.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const gaugeColor = "{{ gauge_color }}";  // or use a fixed color like "#00e676"
+  const biomassValue = {{ biomass_value }};  // ensure this is a number between 0–100
+
+  const opts = {
+    angle: 1.0, // full circle
+    lineWidth: 0.3,
+    radiusScale: 1,
+    pointer: {
+      length: 0.7,
+      strokeWidth: 0.07,
+      color: '#ffeb3b',         // bright yellow needle
+      shadowColor: '#000000',
+      shadowBlur: 10
+    },
+    colorStart: gaugeColor,
+    colorStop: gaugeColor,
+    strokeColor: '#444',        // background arc
+    generateGradient: false,
+    highDpiSupport: true
+  };
+
+  const target = document.getElementById('gaugeCanvas');
+  if (target) {
+    const gauge = new Gauge(target).setOptions(opts);
+    gauge.maxValue = 100;
+    gauge.setMinValue(0);
+    gauge.animationSpeed = 32;
+    gauge.set(biomassValue);
+  }
+});
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("filterForm");
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    const nextBtn = document.getElementById("nextDayBtn");
+    const prevBtn = document.getElementById("prevDayBtn");
+
+    function shiftDate(input, days) {
+      const current = new Date(input.value);
+      if (isNaN(current)) return;
+
+      current.setDate(current.getDate() + days);
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, '0');
+      const dd = String(current.getDate()).padStart(2, '0');
+      input.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    nextBtn.addEventListener("click", () => {
+      shiftDate(endInput, 1);
+      shiftDate(startInput, 1);
+      form.submit();
+    });
+
+    prevBtn.addEventListener("click", () => {
+      shiftDate(endInput, -1);
+      shiftDate(startInput, -1);
+      form.submit();
+    });
+  });
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const label = document.querySelector(".gauge-value");
+    const targetValue = {{ biomass_value }};
+    let current = 0;
+
+    function animateLabel() {
+      if (current < targetValue) {
+        current += (targetValue - current) / 10;
+        label.textContent = current.toFixed(3);
+        requestAnimationFrame(animateLabel);
+      } else {
+        label.textContent = targetValue.toFixed(3);
+      }
+    }
+
+    animateLabel();
+  });
+</script>
+</script>
+</script>
+</body>
+</html>
