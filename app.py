@@ -247,10 +247,6 @@ def export_filtered():
 
 @app.route("/forecast")
 def forecast():
-    _, _, biomass_values,
-    @app.route("/forecast")
-d@app.route("/forecast")
-def forecast():
     _, _, biomass_values, _ = load_data()
     if len(biomass_values) < 2:
         return "Not enough data to forecast.", 200
