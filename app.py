@@ -6,27 +6,22 @@ from collections import defaultdict
 from utils import compute_alert_level
 import pandas as pd
 
-from flask import Flask
-import pandas as pd
-
 app = Flask(__name__)
-app.secret_key = "your-secret-key"
+app.secret_key = "passwof3a9c1e7b2d4a6f8c0e1d3b5a7c9e2f0a1b3d5f7c9e0a2b4c6d8e0f2a4c6e8f0"
 
+# 🔧 Constants
 EXCEL_PATH = "static/data/Biomass_Rainfall_Dan.xlsx"
+DATA_FILE = "static/data/biomass_data.csv"
+FIELDNAMES = ["date", "biomass", "rainfall", "location", "narrative"]
 
+# 🔄 Load and merge Excel data
 def load_combined_data():
-    # Load both sheets using exact names
     biomass_df = pd.read_excel(EXCEL_PATH, sheet_name="Biomass Spefic Locatons")
     rainfall_df = pd.read_excel(EXCEL_PATH, sheet_name="Biomass_Rainfall all Areas")
-
-    # Ensure date columns are datetime
     biomass_df["Date"] = pd.to_datetime(biomass_df["Date"])
     rainfall_df["Date"] = pd.to_datetime(rainfall_df["Date"])
-
-    # Merge on Date
     df = pd.merge(biomass_df, rainfall_df[["Date", "Total.Monthly.Rain"]], on="Date", how="left")
 
-    # Define locations for comparison chart
     locations = ["CHOLOLO", "EAST_RESERVE", "WEST_RESERVE", "DOLDOL"]
     location_series = {
         loc: {
@@ -36,13 +31,13 @@ def load_combined_data():
         for loc in locations
     }
 
-    # Extract main biomass and rainfall series
     biomass = df["Biomass.new"].fillna(0).tolist()
     rainfall = df["Total.Monthly.Rain"].fillna(0).tolist()
     dates = df["Date"].dt.strftime("%Y-%m-%d").tolist()
 
     return dates, biomass, rainfall, location_series
 
+# 🔐 Admin credentials (hashed)
 ADMIN_USERS = {
     "dan": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # password
     "admin": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f"  # biomass123
@@ -86,27 +81,23 @@ def log_action(action, row):
     with open("audit.log", "a") as f:
         f.write(f"{timestamp} | {user} | {action.upper()} | {row}\n")
 
+# 🌐 Routes
+
 @app.route("/")
 def index():
     start = request.args.get("start")
     end = request.args.get("end")
     location = request.args.get("location", "").strip()
 
-    # Load unpacked data from Excel
     dates, biomass, rainfall, location_series = load_combined_data()
 
-    # Optional: filter by date range
     if start and end:
-        filtered = [
-            (d, b, r) for d, b, r in zip(dates, biomass, rainfall)
-            if start <= d <= end
-        ]
+        filtered = [(d, b, r) for d, b, r in zip(dates, biomass, rainfall) if start <= d <= end]
         if filtered:
             dates, biomass, rainfall = zip(*filtered)
         else:
             dates, biomass, rainfall = [], [], []
 
-    # Compute latest and average biomass from filtered data
     latest = round(biomass[-1], 3) if biomass else 0
     avg = round(sum(biomass) / len(biomass), 3) if biomass else 0
     gauge_color = compute_alert_level(latest)
@@ -256,6 +247,9 @@ def export_filtered():
 
 @app.route("/forecast")
 def forecast():
+    _, _, biomass_values,
+    @app.route("/forecast")
+def forecast():
     _, _, biomass_values, _ = load_data()
     if len(biomass_values) < 2:
         return "Not enough data to forecast.", 200
@@ -274,7 +268,8 @@ def login():
             return redirect(url_for("admin"))
         return "Invalid credentials", 401
     return render_template("login.html")
+
+# ✅ Run the app (for Railway deployment)
 if __name__ == "__main__":
-  import os
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
