@@ -1,9 +1,15 @@
-# Biomass Tracker
+# Biomass Tracker 🌿
 
-Simple Flask app to track biomass and rainfall trends using a dynamic gauge.
+A Flask-based dashboard for visualizing biomass and rainfall data.
 
-How to Run:
+## Features
+- Date and location filters
+- Biomass line chart and rainfall bar chart
+- Circular gauge with color-coded alerts
+- Admin panel to add or update records
+- CSV export and basic forecasting
 
-1. pip install -r requirements.txt
-2. python app.py
-3. Visit http://localhost:5000
+## Setup
+```bash
+pip install -r requirements.txt
+python app.py
