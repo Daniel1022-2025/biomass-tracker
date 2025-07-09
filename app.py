@@ -249,6 +249,7 @@ def export_filtered():
 def forecast():
     _, _, biomass_values,
     @app.route("/forecast")
+d@app.route("/forecast")
 def forecast():
     _, _, biomass_values, _ = load_data()
     if len(biomass_values) < 2:
@@ -256,7 +257,6 @@ def forecast():
     trend = biomass_values[-1] - biomass_values[-2]
     forecast = round(biomass_values[-1] + trend, 2)
     return f"📈 Projected biomass for next entry: {forecast} g/m²", 200
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
